@@ -1,0 +1,22 @@
+{
+  "name": "civora-admin-workspace",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Civora Admin Console - Platform Management & Governance Control Plane",
+  "scripts": {
+    "dev": "npm --prefix frontend run dev",
+    "build": "npm --prefix frontend run build",
+    "start": "npm --prefix frontend run start",
+    "lint": "npm --prefix frontend run lint",
+    "test": "npm --prefix frontend run test"
+  },
+  "keywords": [
+    "civora",
+    "admin-console",
+    "construction-intelligence",
+    "platform-governance",
+    "audit-management"
+  ],
+  "author": "Civora Technologies Inc.",
+  "license": "UNLICENSED"
+}
