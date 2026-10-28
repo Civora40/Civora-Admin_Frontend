@@ -7,13 +7,12 @@ export const metadata: Metadata = {
     "Administrative, governance, and identity control plane for the Civora Construction Intelligence Platform.",
   icons: {
     icon: [
-      { url: '/icon.png', sizes: '512x512', type: 'image/png' },
-      { url: '/favicon.ico', sizes: '32x32' },
+      { url: 'https://res.cloudinary.com/depeqzb6z/image/upload/v1792417773/Group_1216401107_1_vuicvo.png', type: 'image/png' },
     ],
     apple: [
-      { url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
+      { url: 'https://res.cloudinary.com/depeqzb6z/image/upload/v1792417773/Group_1216401107_1_vuicvo.png', type: 'image/png' },
     ],
-    shortcut: '/favicon.ico',
+    shortcut: 'https://res.cloudinary.com/depeqzb6z/image/upload/v1792417773/Group_1216401107_1_vuicvo.png',
   },
   robots: {
     index: false,
@@ -29,9 +28,9 @@ export default function RootLayout({
   return (
     <html lang="en" className="h-full bg-slate-50 overflow-x-hidden" suppressHydrationWarning>
       <head>
-        <link rel="icon" href="/icon.png" type="image/png" sizes="512x512" />
-        <link rel="shortcut icon" href="/favicon.ico" />
-        <link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />
+        <link rel="icon" href="https://res.cloudinary.com/depeqzb6z/image/upload/v1792417773/Group_1216401107_1_vuicvo.png" type="image/png" />
+        <link rel="shortcut icon" href="https://res.cloudinary.com/depeqzb6z/image/upload/v1792417773/Group_1216401107_1_vuicvo.png" />
+        <link rel="apple-touch-icon" href="https://res.cloudinary.com/depeqzb6z/image/upload/v1792417773/Group_1216401107_1_vuicvo.png" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link

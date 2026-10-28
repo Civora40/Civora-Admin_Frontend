@@ -64,12 +64,16 @@ interface AdminSidebarProps {
 export function AdminSidebar({ badgeCounts = {}, onCloseMobile }: AdminSidebarProps) {
   const pathname = usePathname();
 
-  const isItemActive = (href: string) => {
-    if (href === '/admin') {
-      return pathname === '/admin';
-    }
-    return pathname.startsWith(href);
-  };
+  const allNavItems = ADMIN_NAVIGATION.flatMap((group) => group.items);
+  const activeItemHref = allNavItems
+    .filter(
+      (item) =>
+        pathname === item.href ||
+        (item.href !== '/admin' && pathname.startsWith(`${item.href}/`))
+    )
+    .sort((a, b) => b.href.length - a.href.length)[0]?.href;
+
+  const isItemActive = (href: string) => href === activeItemHref;
 
   return (
     <aside className="flex flex-col h-full w-72 bg-[#001237] text-white border-r border-slate-800 select-none">
