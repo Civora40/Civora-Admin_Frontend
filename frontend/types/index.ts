@@ -28,6 +28,8 @@ export interface CivoraUser {
 
 export interface SessionData {
   user: CivoraUser;
+  accessToken?: string;
+  refreshToken?: string;
   createdAt: number;
   expiresAt: number;
 }

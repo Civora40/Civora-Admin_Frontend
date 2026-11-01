@@ -57,7 +57,7 @@ export function LoginForm() {
 
   const fillDemoRole = (role: 'platform_admin' | 'systems_auditor') => {
     if (role === 'platform_admin') {
-      setEmail('babatunde.fashola@civora.internal');
+      setEmail('admin@civora.internal');
       setPassword('Civora2026!');
     } else {
       setEmail('amina.bello@civora.internal');

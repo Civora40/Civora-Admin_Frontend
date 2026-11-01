@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "npx tsx tests/admin-console.test.ts"
+    "test": "jiti tests/admin-console.test.ts"
   },
   "dependencies": {
     "lucide-react": "^1.62.0",

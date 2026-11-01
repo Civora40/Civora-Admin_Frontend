@@ -34,15 +34,22 @@ export function deserializeSession(raw: string): SessionData | null {
   }
 }
 
+export interface SessionTokens {
+  accessToken?: string;
+  refreshToken?: string;
+}
+
 /**
  * Server-side helper to create and store session cookie
  */
-export async function createSession(user: CivoraUser): Promise<void> {
+export async function createSession(user: CivoraUser, tokens?: SessionTokens): Promise<void> {
   const cookieStore = await cookies();
   const expiresAt = Date.now() + SESSION_DURATION_MS;
 
   const sessionData: SessionData = {
     user,
+    accessToken: tokens?.accessToken,
+    refreshToken: tokens?.refreshToken,
     createdAt: Date.now(),
     expiresAt,
   };
@@ -54,6 +61,22 @@ export async function createSession(user: CivoraUser): Promise<void> {
     path: '/',
     maxAge: 60 * 60 * 24 * 7,
   });
+}
+
+/**
+ * Retrieve raw session including JWT tokens
+ */
+export async function getSessionData(): Promise<SessionData | null> {
+  try {
+    const cookieStore = await cookies();
+    const cookie = cookieStore.get(SESSION_COOKIE_NAME);
+    if (!cookie?.value) {
+      return null;
+    }
+    return deserializeSession(cookie.value);
+  } catch {
+    return null;
+  }
 }
 
 /**

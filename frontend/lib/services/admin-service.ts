@@ -14,7 +14,8 @@ import {
   SystemServiceHealth,
   PlatformNotification,
   PlatformSettings,
-} from '@/types';
+} from '../../types';
+import { fetchBackend } from '../api/backend-client';
 import {
   INITIAL_ADMIN_USERS,
   INITIAL_ORGANIZATIONS,
@@ -31,7 +32,17 @@ import {
   INITIAL_SYSTEM_HEALTH,
   INITIAL_NOTIFICATIONS,
   INITIAL_PLATFORM_SETTINGS,
-} from '@/lib/mock-data/admin-data';
+} from '../mock-data/admin-data';
+
+async function getAdminAccessToken(): Promise<string | undefined> {
+  try {
+    const { getSessionData } = await import('../auth/session');
+    const session = await getSessionData();
+    return session?.accessToken;
+  } catch {
+    return undefined;
+  }
+}
 
 // In-memory runtime state for mutations during dev/demo sessions
 const users: CivoraUser[] = [...INITIAL_ADMIN_USERS];
@@ -95,14 +106,33 @@ export const AdminService = {
 
   // Users
   async getUsers(): Promise<CivoraUser[]> {
+    const token = await getAdminAccessToken();
+    if (token) {
+      const res = await fetchBackend<CivoraUser[]>('/users/', { accessToken: token });
+      if (res.ok && Array.isArray(res.data) && res.data.length > 0) {
+        return res.data;
+      }
+    }
     return [...users];
   },
 
   async getUserById(id: string): Promise<CivoraUser | undefined> {
-    return users.find((u) => u.id === id);
+    const allUsers = await this.getUsers();
+    return allUsers.find((u) => u.id === id);
   },
 
   async toggleUserStatus(id: string, actorEmail: string = 'admin@civora.internal'): Promise<CivoraUser> {
+    const token = await getAdminAccessToken();
+    if (token) {
+      const res = await fetchBackend<CivoraUser>(`/users/${id}/toggle-status/`, {
+        method: 'POST',
+        accessToken: token,
+      });
+      if (res.ok && res.data) {
+        return res.data;
+      }
+    }
+
     const userIndex = users.findIndex((u) => u.id === id);
     if (userIndex === -1) throw new Error(`User ${id} not found`);
 
@@ -133,28 +163,64 @@ export const AdminService = {
 
   // Organizations
   async getOrganizations(): Promise<Organization[]> {
+    const token = await getAdminAccessToken();
+    if (token) {
+      const res = await fetchBackend<Organization[]>('/organizations/', { accessToken: token });
+      if (res.ok && Array.isArray(res.data) && res.data.length > 0) {
+        return res.data;
+      }
+    }
     return [...organizations];
   },
 
   async getOrganizationById(id: string): Promise<Organization | undefined> {
-    return organizations.find((o) => o.id === id);
+    const allOrgs = await this.getOrganizations();
+    return allOrgs.find((o) => o.id === id);
   },
 
   // Projects
   async getProjects(): Promise<Project[]> {
+    const token = await getAdminAccessToken();
+    if (token) {
+      const res = await fetchBackend<Project[]>('/projects/', { accessToken: token });
+      if (res.ok && Array.isArray(res.data) && res.data.length > 0) {
+        return res.data;
+      }
+    }
     return [...projects];
   },
 
   async getProjectById(id: string): Promise<Project | undefined> {
-    return projects.find((p) => p.id === id);
+    const allProjects = await this.getProjects();
+    return allProjects.find((p) => p.id === id);
   },
 
   // Memberships
   async getMemberships(): Promise<MembershipRecord[]> {
+    const token = await getAdminAccessToken();
+    if (token) {
+      const res = await fetchBackend<MembershipRecord[]>('/organizations/memberships/', {
+        accessToken: token,
+      });
+      if (res.ok && Array.isArray(res.data) && res.data.length > 0) {
+        return res.data;
+      }
+    }
     return [...memberships];
   },
 
   async revokeMembership(id: string, actorEmail: string = 'admin@civora.internal'): Promise<void> {
+    const token = await getAdminAccessToken();
+    if (token) {
+      const res = await fetchBackend(`/organizations/memberships/${id}/`, {
+        method: 'DELETE',
+        accessToken: token,
+      });
+      if (res.ok) {
+        return;
+      }
+    }
+
     const item = memberships.find((m) => m.id === id);
     memberships = memberships.filter((m) => m.id !== id);
 
@@ -177,6 +243,15 @@ export const AdminService = {
 
   // Invitations
   async getInvitations(): Promise<UserInvitation[]> {
+    const token = await getAdminAccessToken();
+    if (token) {
+      const res = await fetchBackend<UserInvitation[]>('/organizations/invitations/', {
+        accessToken: token,
+      });
+      if (res.ok && Array.isArray(res.data) && res.data.length > 0) {
+        return res.data;
+      }
+    }
     return [...invitations];
   },
 
@@ -184,6 +259,18 @@ export const AdminService = {
     data: Omit<UserInvitation, 'id' | 'invitedAt' | 'expiresAt' | 'status' | 'invitationCode'>,
     actorEmail: string = 'admin@civora.internal'
   ): Promise<UserInvitation> {
+    const token = await getAdminAccessToken();
+    if (token) {
+      const res = await fetchBackend<UserInvitation>('/organizations/invitations/', {
+        method: 'POST',
+        accessToken: token,
+        body: data,
+      });
+      if (res.ok && res.data) {
+        return res.data;
+      }
+    }
+
     const newInv: UserInvitation = {
       ...data,
       id: `inv_${Date.now()}`,
@@ -215,6 +302,17 @@ export const AdminService = {
   },
 
   async revokeInvitation(id: string, actorEmail: string = 'admin@civora.internal'): Promise<void> {
+    const token = await getAdminAccessToken();
+    if (token) {
+      const res = await fetchBackend(`/organizations/invitations/${id}/revoke/`, {
+        method: 'POST',
+        accessToken: token,
+      });
+      if (res.ok) {
+        return;
+      }
+    }
+
     const inv = invitations.find((i) => i.id === id);
     if (inv) {
       inv.status = 'revoked';
@@ -331,6 +429,13 @@ export const AdminService = {
 
   // Governance & Audit
   async getAuditLogs(): Promise<AuditLogEntry[]> {
+    const token = await getAdminAccessToken();
+    if (token) {
+      const res = await fetchBackend<AuditLogEntry[]>('/audit/', { accessToken: token });
+      if (res.ok && Array.isArray(res.data) && res.data.length > 0) {
+        return res.data;
+      }
+    }
     return [...auditLog];
   },
 
