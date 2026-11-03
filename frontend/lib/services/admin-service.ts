@@ -36,9 +36,12 @@ import {
 
 async function getAdminAccessToken(): Promise<string | undefined> {
   try {
-    const { getSessionData } = await import('../auth/session');
-    const session = await getSessionData();
-    return session?.accessToken;
+    if (typeof window !== 'undefined') {
+      const cached = window.sessionStorage.getItem('civora_admin_token');
+      if (cached) return cached;
+      return undefined;
+    }
+    return (globalThis as Record<string, unknown>).__civoraAdminAccessToken as string | undefined;
   } catch {
     return undefined;
   }

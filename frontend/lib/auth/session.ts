@@ -54,6 +54,8 @@ export async function createSession(user: CivoraUser, tokens?: SessionTokens): P
     expiresAt,
   };
 
+  (globalThis as Record<string, unknown>).__civoraAdminAccessToken = tokens?.accessToken;
+
   cookieStore.set(SESSION_COOKIE_NAME, serializeSession(sessionData), {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
@@ -96,6 +98,7 @@ export async function getCurrentUser(): Promise<CivoraUser | null> {
     }
 
     const session = deserializeSession(cookie.value);
+    (globalThis as Record<string, unknown>).__civoraAdminAccessToken = session?.accessToken;
     return session ? session.user : null;
   } catch {
     // In dev mode fallback
@@ -107,6 +110,7 @@ export async function getCurrentUser(): Promise<CivoraUser | null> {
  * Clear session cookie (sign-out)
  */
 export async function destroySession(): Promise<void> {
+  (globalThis as Record<string, unknown>).__civoraAdminAccessToken = undefined;
   const cookieStore = await cookies();
   cookieStore.delete(SESSION_COOKIE_NAME);
 }

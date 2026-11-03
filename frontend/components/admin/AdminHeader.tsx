@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   Bell,
   Shield,
@@ -25,7 +26,22 @@ export function AdminHeader({
   unreadCount = 2,
   onOpenMobileNav,
 }: AdminHeaderProps) {
+  const router = useRouter();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+
+  const handleSignOut = async () => {
+    setUserMenuOpen(false);
+    try {
+      await fetch('/api/auth/login', { method: 'DELETE' });
+    } catch {
+      // ignore network error
+    }
+    if (typeof window !== 'undefined') {
+      window.sessionStorage.removeItem('civora_admin_token');
+    }
+    router.push('/login');
+    router.refresh();
+  };
 
   return (
     <header className="sticky top-0 z-30 flex h-16 w-full items-center justify-between border-b border-slate-200 bg-white/95 px-4 sm:px-6 backdrop-blur-md">
@@ -157,14 +173,14 @@ export function AdminHeader({
                 </div>
 
                 <div className="pt-1 border-t border-slate-100">
-                  <Link
-                    href="/login"
-                    onClick={() => setUserMenuOpen(false)}
-                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-rose-600 hover:bg-rose-50 font-medium"
+                  <button
+                    type="button"
+                    onClick={handleSignOut}
+                    className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-rose-600 hover:bg-rose-50 font-medium cursor-pointer"
                   >
                     <LogOut className="w-4 h-4 text-rose-500" />
                     <span>Sign Out of Admin Console</span>
-                  </Link>
+                  </button>
                 </div>
               </div>
             </>

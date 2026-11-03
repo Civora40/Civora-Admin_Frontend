@@ -29,6 +29,7 @@ export async function POST(request: Request) {
       return NextResponse.json({
         success: true,
         user: backendRes.data.user,
+        accessToken: backendRes.data.access,
         source: 'civora_backend',
       });
     }
@@ -46,9 +47,26 @@ export async function POST(request: Request) {
       );
     }
 
-    // 2. Offline fallback if backend is unreachable
+    // 2. Offline fallback if backend is unreachable — enforce verified admin credentials
+    const normalizedEmail = String(email || '').trim().toLowerCase();
+    const isAuthorizedFallbackAdmin =
+      (normalizedEmail === 'civora40@gmail.com' && password === 'Civora@40Admin#2026!') ||
+      INITIAL_ADMIN_USERS.some(
+        (u) => u.email.toLowerCase() === normalizedEmail && u.role === 'platform_admin' && password === 'Civora@40Admin#2026!'
+      );
+
+    if (!isAuthorizedFallbackAdmin) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Invalid administrator credentials or insufficient clearance.',
+        },
+        { status: 401 }
+      );
+    }
+
     const targetUser =
-      INITIAL_ADMIN_USERS.find((u) => u.email.toLowerCase() === (email || '').toLowerCase()) ||
+      INITIAL_ADMIN_USERS.find((u) => u.email.toLowerCase() === normalizedEmail) ||
       INITIAL_ADMIN_USERS[0];
 
     await createSession(targetUser);
@@ -63,6 +81,15 @@ export async function POST(request: Request) {
       { status: 500 }
     );
   }
+}
+
+export async function GET() {
+  const session = await getSessionData();
+  return NextResponse.json({
+    authenticated: Boolean(session?.user),
+    user: session?.user ?? null,
+    accessToken: session?.accessToken,
+  });
 }
 
 export async function DELETE() {

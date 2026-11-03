@@ -19,14 +19,14 @@ import {
 export const INITIAL_ADMIN_USERS: CivoraUser[] = [
   {
     id: 'usr_adm_01',
-    name: 'Engr. Babatunde Fashola-Smith',
-    email: 'babatunde.fashola@civora.internal',
+    name: 'Civora Platform Administrator',
+    email: 'Civora40@gmail.com',
     role: 'platform_admin',
     title: 'Lead Platform Administrator & Chief Compliance Officer',
     organization: 'Civora Core Infrastructure',
     organizationId: 'org_civora_core',
     department: 'Platform Governance & Engineering',
-    phone: '+234 803 555 0192',
+    phone: '+234 801 000 0001',
     corenNumber: 'R.38910',
     corenStatus: 'verified',
     accountStatus: 'active',
