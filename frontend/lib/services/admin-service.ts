@@ -83,6 +83,14 @@ export interface OverviewMetrics {
 export const AdminService = {
   // Overview
   async getOverviewMetrics(): Promise<OverviewMetrics> {
+    const [allUsers, allOrgs, allProjects, allInvitations, allNotifs] = await Promise.all([
+      this.getUsers(),
+      this.getOrganizations(),
+      this.getProjects(),
+      this.getInvitations(),
+      this.getNotifications(),
+    ]);
+
     const healthyServices = systemHealth.filter((s) => s.status === 'healthy').length;
     const anyDegraded = systemHealth.some((s) => s.status === 'degraded');
     const anyUnhealthy = systemHealth.some((s) => s.status === 'unhealthy');
@@ -91,10 +99,10 @@ export const AdminService = {
     const totalDuplicates = channelTelemetry.reduce((acc, curr) => acc + curr.duplicatesBlocked24h, 0);
 
     return {
-      totalUsers: users.length,
-      activeUsers: users.filter((u) => u.accountStatus === 'active').length,
-      totalOrganizations: organizations.length,
-      activeProjects: projects.filter((p) => p.status === 'active').length,
+      totalUsers: allUsers.length,
+      activeUsers: allUsers.filter((u) => u.accountStatus === 'active').length,
+      totalOrganizations: allOrgs.length,
+      activeProjects: allProjects.filter((p) => p.status === 'active').length,
       systemHealthStatus: anyUnhealthy ? 'critical' : anyDegraded ? 'degraded' : 'healthy',
       healthyServicesCount: healthyServices,
       totalServicesCount: systemHealth.length,
@@ -102,8 +110,8 @@ export const AdminService = {
       duplicatesBlocked24h: totalDuplicates,
       openQualityFlags: qualityIssues.filter((q) => q.status === 'open' || q.status === 'investigating').length,
       criticalSecurityEvents: securityEvents.filter((s) => s.severity === 'critical' && s.status === 'open').length,
-      unreadNotifications: notifications.filter((n) => !n.read).length,
-      pendingInvitations: invitations.filter((i) => i.status === 'pending').length,
+      unreadNotifications: allNotifs.filter((n) => !n.read).length,
+      pendingInvitations: allInvitations.filter((i) => i.status === 'pending').length,
     };
   },
 
@@ -112,7 +120,7 @@ export const AdminService = {
     const token = await getAdminAccessToken();
     if (token) {
       const res = await fetchBackend<CivoraUser[]>('/users/', { accessToken: token });
-      if (res.ok && Array.isArray(res.data) && res.data.length > 0) {
+      if (res.ok && Array.isArray(res.data)) {
         return res.data;
       }
     }
@@ -169,7 +177,7 @@ export const AdminService = {
     const token = await getAdminAccessToken();
     if (token) {
       const res = await fetchBackend<Organization[]>('/organizations/', { accessToken: token });
-      if (res.ok && Array.isArray(res.data) && res.data.length > 0) {
+      if (res.ok && Array.isArray(res.data)) {
         return res.data;
       }
     }
@@ -186,7 +194,7 @@ export const AdminService = {
     const token = await getAdminAccessToken();
     if (token) {
       const res = await fetchBackend<Project[]>('/projects/', { accessToken: token });
-      if (res.ok && Array.isArray(res.data) && res.data.length > 0) {
+      if (res.ok && Array.isArray(res.data)) {
         return res.data;
       }
     }
@@ -205,7 +213,7 @@ export const AdminService = {
       const res = await fetchBackend<MembershipRecord[]>('/organizations/memberships/', {
         accessToken: token,
       });
-      if (res.ok && Array.isArray(res.data) && res.data.length > 0) {
+      if (res.ok && Array.isArray(res.data)) {
         return res.data;
       }
     }
@@ -251,7 +259,7 @@ export const AdminService = {
       const res = await fetchBackend<UserInvitation[]>('/organizations/invitations/', {
         accessToken: token,
       });
-      if (res.ok && Array.isArray(res.data) && res.data.length > 0) {
+      if (res.ok && Array.isArray(res.data)) {
         return res.data;
       }
     }
@@ -435,7 +443,7 @@ export const AdminService = {
     const token = await getAdminAccessToken();
     if (token) {
       const res = await fetchBackend<AuditLogEntry[]>('/audit/', { accessToken: token });
-      if (res.ok && Array.isArray(res.data) && res.data.length > 0) {
+      if (res.ok && Array.isArray(res.data)) {
         return res.data;
       }
     }
@@ -455,6 +463,15 @@ export const AdminService = {
   },
 
   async getReportTemplates(): Promise<ReportTemplate[]> {
+    const token = await getAdminAccessToken();
+    if (token) {
+      const res = await fetchBackend<ReportTemplate[]>('/reports/templates/', {
+        accessToken: token,
+      });
+      if (res.ok && Array.isArray(res.data) && res.data.length > 0) {
+        return res.data;
+      }
+    }
     return [...reportTemplates];
   },
 
@@ -465,15 +482,41 @@ export const AdminService = {
 
   // Notifications
   async getNotifications(): Promise<PlatformNotification[]> {
+    const token = await getAdminAccessToken();
+    if (token) {
+      const res = await fetchBackend<{ notifications?: PlatformNotification[] }>(
+        '/notifications/?scope=all',
+        { accessToken: token }
+      );
+      if (res.ok && res.data && Array.isArray(res.data.notifications) && res.data.notifications.length > 0) {
+        return res.data.notifications;
+      }
+    }
     return [...notifications];
   },
 
   async markNotificationAsRead(id: string): Promise<void> {
+    const token = await getAdminAccessToken();
+    if (token) {
+      await fetchBackend('/notifications/', {
+        method: 'POST',
+        accessToken: token,
+        body: { action: 'mark_read', notificationId: id },
+      });
+    }
     const n = notifications.find((item) => item.id === id);
     if (n) n.read = true;
   },
 
   async markAllNotificationsAsRead(): Promise<void> {
+    const token = await getAdminAccessToken();
+    if (token) {
+      await fetchBackend('/notifications/', {
+        method: 'POST',
+        accessToken: token,
+        body: { action: 'mark_all_read' },
+      });
+    }
     notifications.forEach((n) => (n.read = true));
   },
 
