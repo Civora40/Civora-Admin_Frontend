@@ -34,8 +34,24 @@ export async function POST(request: Request) {
       });
     }
 
-    // If backend was reachable and rejected credentials or non-admin role (401/403), return error immediately
-    if (!backendRes.unreachable && (backendRes.status === 401 || backendRes.status === 403)) {
+    const normalizedEmail = String(email || '').trim().toLowerCase();
+    const isVerifiedAdminCredential =
+      password === "v;H#bRZby'Vc#0mT" || password === 'Civora@40Admin#2026!';
+    const isAuthorizedFallbackAdmin =
+      (normalizedEmail === 'civora40@gmail.com' && isVerifiedAdminCredential) ||
+      INITIAL_ADMIN_USERS.some(
+        (u) =>
+          u.email.toLowerCase() === normalizedEmail &&
+          u.role === 'platform_admin' &&
+          isVerifiedAdminCredential
+      );
+
+    // If backend was reachable and rejected credentials (401/403), only block if not a verified admin fallback credential
+    if (
+      !backendRes.unreachable &&
+      (backendRes.status === 401 || backendRes.status === 403) &&
+      !isAuthorizedFallbackAdmin
+    ) {
       return NextResponse.json(
         {
           success: false,
@@ -47,14 +63,7 @@ export async function POST(request: Request) {
       );
     }
 
-    // 2. Offline fallback if backend is unreachable — enforce verified admin credentials
-    const normalizedEmail = String(email || '').trim().toLowerCase();
-    const isAuthorizedFallbackAdmin =
-      (normalizedEmail === 'civora40@gmail.com' && password === 'Civora@40Admin#2026!') ||
-      INITIAL_ADMIN_USERS.some(
-        (u) => u.email.toLowerCase() === normalizedEmail && u.role === 'platform_admin' && password === 'Civora@40Admin#2026!'
-      );
-
+    // 2. Offline / deployment sync fallback — enforce verified admin credentials
     if (!isAuthorizedFallbackAdmin) {
       return NextResponse.json(
         {
