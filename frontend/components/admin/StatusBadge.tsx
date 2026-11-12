@@ -8,6 +8,11 @@ export type StatusType =
   | 'approved'
   | 'compliant'
   | 'pending'
+  | 'pending_approval'
+  | 'pending_review'
+  | 'changes_requested'
+  | 'draft'
+  | 'setup'
   | 'in_review'
   | 'in_progress'
   | 'partial_failure'
@@ -15,6 +20,7 @@ export type StatusType =
   | 'investigating'
   | 'open'
   | 'flagged'
+  | 'rejected'
   | 'suspended'
   | 'failed'
   | 'critical'
@@ -129,6 +135,48 @@ export function StatusBadge({
       border: 'border-amber-300',
       dot: 'bg-amber-500',
       defaultLabel: 'In Review',
+    },
+    pending_approval: {
+      bg: 'bg-amber-50',
+      text: 'text-amber-800',
+      border: 'border-amber-300',
+      dot: 'bg-amber-500',
+      defaultLabel: 'Pending Admin Approval',
+    },
+    pending_review: {
+      bg: 'bg-amber-50',
+      text: 'text-amber-800',
+      border: 'border-amber-300',
+      dot: 'bg-amber-500',
+      defaultLabel: 'Pending Review',
+    },
+    changes_requested: {
+      bg: 'bg-amber-50',
+      text: 'text-amber-900',
+      border: 'border-amber-300',
+      dot: 'bg-amber-600',
+      defaultLabel: 'Changes Requested',
+    },
+    draft: {
+      bg: 'bg-slate-100',
+      text: 'text-slate-700',
+      border: 'border-slate-300',
+      dot: 'bg-slate-400',
+      defaultLabel: 'Draft',
+    },
+    setup: {
+      bg: 'bg-[#3B68DE]/15',
+      text: 'text-blue-800',
+      border: 'border-[#3B68DE]/30',
+      dot: 'bg-[#3B68DE]',
+      defaultLabel: 'Setup',
+    },
+    rejected: {
+      bg: 'bg-rose-50',
+      text: 'text-rose-700',
+      border: 'border-rose-200',
+      dot: 'bg-rose-500',
+      defaultLabel: 'Rejected',
     },
     investigating: {
       bg: 'bg-amber-50',

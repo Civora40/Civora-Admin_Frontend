@@ -85,7 +85,22 @@ export interface Organization {
   notes?: string;
 }
 
-export type ProjectStatus = 'active' | 'in_review' | 'completed' | 'on_hold' | 'archived';
+export type ProjectStatus =
+  | 'draft'
+  | 'pending_approval'
+  | 'setup'
+  | 'active'
+  | 'in_review'
+  | 'completed'
+  | 'on_hold'
+  | 'rejected'
+  | 'archived';
+
+export type ProjectApprovalStatus =
+  | 'pending_review'
+  | 'approved'
+  | 'changes_requested'
+  | 'rejected';
 
 export interface Project {
   id: string;
@@ -96,6 +111,21 @@ export interface Project {
   clientName: string;
   location: string;
   status: ProjectStatus;
+  approvalStatus?: ProjectApprovalStatus;
+  isAdminApproved?: boolean;
+  canAcceptFieldSubmissions?: boolean;
+  fieldSubmissionBlockReason?: string | null;
+  reviewedById?: string | null;
+  reviewedByName?: string | null;
+  reviewedByEmail?: string | null;
+  reviewedAt?: string | null;
+  reviewNotes?: string;
+  createdById?: string | null;
+  createdByName?: string | null;
+  createdByEmail?: string | null;
+  specsReference?: string;
+  description?: string;
+  budgetFormatted?: string;
   lasbcaPermitNumber?: string;
   corenLeadEngineer?: string;
   startDate: string;

@@ -16,6 +16,7 @@ import {
   PlatformSettings,
 } from '../../types';
 import { fetchBackend } from '../api/backend-client';
+import { normalizeAdminProject } from './project-normalizer';
 import {
   INITIAL_ADMIN_USERS,
   INITIAL_ORGANIZATIONS,
@@ -69,6 +70,7 @@ export interface OverviewMetrics {
   activeUsers: number;
   totalOrganizations: number;
   activeProjects: number;
+  pendingApprovalProjects: number;
   systemHealthStatus: 'healthy' | 'degraded' | 'critical';
   healthyServicesCount: number;
   totalServicesCount: number;
@@ -82,11 +84,11 @@ export interface OverviewMetrics {
 
 export const AdminService = {
   // Overview
-  async getOverviewMetrics(): Promise<OverviewMetrics> {
+  async getOverviewMetrics(accessToken?: string): Promise<OverviewMetrics> {
     const [allUsers, allOrgs, allProjects, allInvitations, allNotifs] = await Promise.all([
       this.getUsers(),
       this.getOrganizations(),
-      this.getProjects(),
+      this.getProjects(accessToken),
       this.getInvitations(),
       this.getNotifications(),
     ]);
@@ -103,6 +105,9 @@ export const AdminService = {
       activeUsers: allUsers.filter((u) => u.accountStatus === 'active').length,
       totalOrganizations: allOrgs.length,
       activeProjects: allProjects.filter((p) => p.status === 'active').length,
+      pendingApprovalProjects: allProjects.filter(
+        (p) => p.approvalStatus === 'pending_review' || p.status === 'pending_approval'
+      ).length,
       systemHealthStatus: anyUnhealthy ? 'critical' : anyDegraded ? 'degraded' : 'healthy',
       healthyServicesCount: healthyServices,
       totalServicesCount: systemHealth.length,
@@ -190,15 +195,66 @@ export const AdminService = {
   },
 
   // Projects
-  async getProjects(): Promise<Project[]> {
-    const token = await getAdminAccessToken();
-    if (token) {
-      const res = await fetchBackend<Project[]>('/projects/', { accessToken: token });
-      if (res.ok && Array.isArray(res.data)) {
-        return res.data;
+  async getProjects(accessTokenOverride?: string): Promise<Project[]> {
+    if (typeof window !== 'undefined') {
+      try {
+        const response = await fetch('/api/projects', { cache: 'no-store' });
+        if (response.ok) {
+          const data = await response.json();
+          if (Array.isArray(data.projects)) {
+            return data.projects;
+          }
+        }
+      } catch {
+        // Fall through to cached token / local store
       }
     }
-    return [...projects];
+
+    const token = accessTokenOverride || (await getAdminAccessToken());
+    if (token) {
+      const res = await fetchBackend<Record<string, unknown>[]>('/projects/', { accessToken: token });
+      if (res.ok && Array.isArray(res.data)) {
+        return res.data.map(normalizeAdminProject);
+      }
+    }
+    return projects.map((p) => normalizeAdminProject(p as unknown as Record<string, unknown>));
+  },
+
+  async reviewProject(
+    projectId: string,
+    payload: {
+      decision: 'approve' | 'request_changes' | 'reject';
+      notes?: string;
+      targetStatus?: 'setup' | 'active';
+    }
+  ): Promise<Project> {
+    if (typeof window !== 'undefined') {
+      const response = await fetch(`/api/projects/${projectId}/review`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data.project) {
+        throw new Error(data.error || 'Failed to submit project review decision.');
+      }
+      return data.project as Project;
+    }
+
+    const token = await getAdminAccessToken();
+    if (token) {
+      const res = await fetchBackend<Record<string, unknown>>(`/projects/${projectId}/review/`, {
+        method: 'POST',
+        accessToken: token,
+        body: payload,
+      });
+      if (res.ok && res.data) {
+        return normalizeAdminProject(res.data);
+      }
+      throw new Error(res.error?.message || res.message || 'Project review failed.');
+    }
+
+    throw new Error('Administrator session token not found.');
   },
 
   async getProjectById(id: string): Promise<Project | undefined> {

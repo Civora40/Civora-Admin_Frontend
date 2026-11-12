@@ -14,12 +14,14 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { AdminService } from '@/lib/services/admin-service';
+import { getSessionData } from '@/lib/auth/session';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { StatusBadge } from '@/components/admin/StatusBadge';
 import { Button } from '@/components/ui/Button';
 
 export default async function AdminOverviewPage() {
-  const metrics = await AdminService.getOverviewMetrics();
+  const session = await getSessionData();
+  const metrics = await AdminService.getOverviewMetrics(session?.accessToken);
   const recentActivities = (await AdminService.getAuditLogs()).slice(0, 5);
   const telemetry = await AdminService.getChannelTelemetry();
   const qualityIssues = (await AdminService.getDataQualityIssues()).filter(
@@ -112,7 +114,16 @@ export default async function AdminOverviewPage() {
               <span>Inspect sites</span>
               <ArrowUpRight className="w-3 h-3" />
             </Link>
-            <span className="text-slate-400">LASBCA tracked</span>
+            {metrics.pendingApprovalProjects > 0 ? (
+              <Link
+                href="/admin/projects?status=pending_approval"
+                className="text-amber-800 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded text-[10px] font-bold hover:bg-amber-100 transition-colors"
+              >
+                {metrics.pendingApprovalProjects} pending approval
+              </Link>
+            ) : (
+              <span className="text-slate-400">LASBCA tracked</span>
+            )}
           </div>
         </div>
 
