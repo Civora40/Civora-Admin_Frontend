@@ -85,3 +85,4 @@ export function normalizeAdminProject(raw: Record<string, unknown>): Project {
     updatedAt: String(raw.updatedAt || raw.updated_at || ''),
   };
 }
+
