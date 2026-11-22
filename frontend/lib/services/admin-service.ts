@@ -433,14 +433,49 @@ export const AdminService = {
 
   // Messaging & Ingestion
   async getChannelTelemetry(): Promise<ChannelTelemetry[]> {
+    try {
+      const accessToken = await getAdminAccessToken();
+      const res = await fetchBackend<ChannelTelemetry[]>('/integrations/telemetry/', {
+        accessToken,
+      });
+      if (res.ok && res.data && Array.isArray(res.data) && res.data.length > 0) {
+        return res.data;
+      }
+    } catch (e) {
+      console.warn('Backend telemetry unavailable, using local telemetry fallback:', e);
+    }
     return [...channelTelemetry];
   },
 
   async getIngestionRuns(): Promise<IngestionRun[]> {
+    try {
+      const accessToken = await getAdminAccessToken();
+      const res = await fetchBackend<any>('/integrations/runs/', {
+        accessToken,
+      });
+      if (res.ok && res.data) {
+        const list = Array.isArray(res.data) ? res.data : res.data?.results;
+        if (list && Array.isArray(list) && list.length > 0) {
+          return list as IngestionRun[];
+        }
+      }
+    } catch (e) {
+      console.warn('Backend ingestion runs unavailable, using local runs fallback:', e);
+    }
     return [...ingestionRuns];
   },
 
   async retryIngestionRun(runId: string): Promise<IngestionRun> {
+    try {
+      const accessToken = await getAdminAccessToken();
+      await fetchBackend(`/integrations/runs/${runId}/retry/`, {
+        method: 'POST',
+        accessToken,
+      });
+    } catch (e) {
+      console.warn('Backend retry call failed, falling back to local simulation:', e);
+    }
+
     const run = ingestionRuns.find((r) => r.id === runId);
     if (!run) throw new Error('Run not found');
 
